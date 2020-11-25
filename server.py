@@ -1,11 +1,13 @@
 from flask import Flask
 from threading import Thread
 import queue
-import control, weather, logging
+import control, weather, logging, logging
 
 app = Flask(__name__)
 run_weather = False
 weather_thread = None
+run_music = False
+music_thread = None
 
 @app.route('/rgb/<red>/<green>/<blue>')
 def rgb(red, green, blue):
@@ -67,3 +69,34 @@ def stop_weather():
     weather_thread.join()
     control.show_color([[0,0,0],[0,0,0],[0,0,0]])
     return "Stopped weather sequence"
+
+@app.route('/music')
+def music():
+    global run_music
+    global music_thread
+    run_music = True
+    music_thread = Thread(target = music_service, args=("Music Service",))
+    music_thread.start()
+    return "Started the music listener"
+
+def music_service(thread_name):
+    import music
+    import time
+    logging.info("Thread %s: starting", thread_name)
+    global music_thread
+    while run_music:
+        music.mk_fifo()
+        #read from pipe
+        with open(music.FIFO_PATH) as fifo:
+            music.flush_pipe(fifo)
+            while run_music:
+                vis_data = fifo.readline()
+                music.read_data(vis_data) 
+
+@app.route('/stop_music')
+def stop_music():
+    global run_music
+    run_music = False
+    music_thread.join()
+    control.show_color([[0,0,0],[0,0,0],[0,0,0]])
+    return "Stopped music sequence"

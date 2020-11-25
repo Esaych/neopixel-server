@@ -12,6 +12,7 @@ num_pixels = 36
 pixel_pin = board.D18
 ORDER = neopixel.GRB
 FIFO_PATH = '/tmp/cava'
+cmap = matplotlib.cm.get_cmap("inferno")
 
 def get_spaced_colors(n):
     max_value = 16581375
@@ -30,7 +31,7 @@ def do_cmap(cmap, num):
     r, g, b, _ = cmap(num / 255)
     return (int(r*255),int(g*255),int(b*255))
 
-def read_data(eq, cmap):
+def read_data(eq):
     #print("eq: " + eq)
     nums = eq.split(';')
     if (len(nums) != 4):
@@ -51,9 +52,7 @@ def flush_pipe(fifo):
             delta = time.time() - time_mark
             time_mark = time.time()
 
-def handle_fifo():
-    cmap = matplotlib.cm.get_cmap("inferno")
-
+def mk_fifo():
     try:
         os.mkfifo(FIFO_PATH)
     except FileExistsError:
@@ -61,14 +60,15 @@ def handle_fifo():
     except OSError as oe:
         raise
 
+def handle_fifo():
+    mk_fifo()
+
     #read from pipe
     with open(FIFO_PATH) as fifo:
-        buff = ''
+        flush_pipe(fifo)
         while True:
-            flush_pipe(fifo)
-            # select.select([fifo],[],[fifo])
             chunk = fifo.readline()
-            read_data(chunk, cmap)                    
+            read_data(chunk)                    
 
 if __name__ == '__main__':
     handle_fifo()
