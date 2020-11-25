@@ -1,11 +1,12 @@
 import control
+import config
 
 import requests, json, time
 
 cache_weather = {}
 cache_time = 0
 
-api_key = "<REDACTED>"
+api_key = config.weather["api_key"]
 
 def collect_weather():
     global cache_weather
