@@ -13,6 +13,7 @@ pixel_pin = board.D18
 ORDER = neopixel.GRB
 FIFO_PATH = '/tmp/cava'
 cmap = matplotlib.cm.get_cmap("inferno")
+cmap_colors = ['viridis','plasma','inferno','magma','cividis','rainbow']
 
 def get_spaced_colors(n):
     max_value = 16581375
@@ -26,9 +27,9 @@ def get_spaced_colors(n):
              int(color[4:6], 16)) for color in colors]
 
 def do_cmap(cmap, num):
-    if num == 0: return (0, 0, 0)
-
     r, g, b, _ = cmap(num / 255)
+    if (r+g+b)*255 <= 3: return (0, 0, 0)
+
     return (int(r*255),int(g*255),int(b*255))
 
 def read_data(eq):
@@ -69,6 +70,12 @@ def handle_fifo():
         while True:
             chunk = fifo.readline()
             read_data(chunk)                    
+
+def set_cmap(hash):
+    global cmap
+    num = hash % len(cmap_colors)
+    cmap = matplotlib.cm.get_cmap(cmap_colors[num])
+    return cmap_colors[num]
 
 if __name__ == '__main__':
     handle_fifo()
